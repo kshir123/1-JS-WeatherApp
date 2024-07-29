@@ -1,44 +1,87 @@
-const apiKey = '1bf9340c42be212dbad705254cc3a66a';
-const apiUrl = `https://api.openweathermap.org/data/2.5/weather?&appid=${apiKey}&units=metric&q=`;
+// Whole-script strict mode syntax
+"use strict";
 
-const searchBox = document.querySelector('.search input');
-const searchButton = document.querySelector('.search button');
-const weatherIcon =document.querySelector('.weather-icon');
+const API_KEY = '1bf9340c42be212dbad705254cc3a66a';
+const API_URL = `https://api.openweathermap.org/data/2.5/weather?&appid=${API_KEY}&units=metric&q=`;
 
-searchButton.addEventListener('click', ()=>{
-  const city = searchBox.value;
-  checkWeather(city);
-})
+const SEARCH_BOX = document.querySelector('.search input');
+const SEARCH_BUTTON = document.querySelector('.search button');
+const WEATHER_ICON = document.querySelector('.weather-icon');
+const ERROR_ELEMENT = document.querySelector('.error');
+const WEATHER_ELEMENT = document.querySelector('.weather');
+const CITY_ELEMENT = document.querySelector('.city');
+const TEMP_ELEMENT = document.querySelector('.temp');
+const HUMIDITY_ELEMENT = document.querySelector('.humidity');
+const WIND_ELEMENT = document.querySelector('.wind');
 
+// Onclick of SEARCH_BUTTON it calls checkWeather()
+function clickEventHandler() {
+  SEARCH_BUTTON.addEventListener('click', ()=>{
+    const city = SEARCH_BOX.value;
+    checkWeather(city);
+  })
+}
+
+/**
+ * Fetches and displays weather information for a given city.
+ * @async
+ * @function checkWeather
+ * @param {string} city - The name of the city to fetch weather information for.
+ * @returns {Promise<void>} - A promise that resolves when the weather information is fetched and displayed.
+ */
 async function checkWeather(city) {
-  const response = await fetch(apiUrl + city);
+  try {
+    const response = await fetch(`${API_URL}${city}`);
 
-  if(response.status === 404) {
-    document.querySelector('.error').style.display = 'block';
-    document.querySelector('.weather').style.display = 'none';
-  } else {
-    let data = await response.json();
-
-    //Appending details to the individual fields
-    document.querySelector('.city').innerHTML = data.name;
-    document.querySelector('.temp').innerHTML = Math.round(data.main.temp) + ' °C';
-    document.querySelector('.humidity').innerHTML = data.main.humidity +' %';
-    document.querySelector('.wind').innerHTML = data.wind.speed + ' km/h';
-
-    // Appending icons as per weather condition
-    if(data.weather[0].main === 'Clouds') {
-      weatherIcon.src = 'images/clouds.png' ;
-    } else if(data.weather[0].main === 'Clear') {
-      weatherIcon.src = 'images/clear.png' ;
-    } else if(data.weather[0].main === 'Rain') {
-      weatherIcon.src = 'images/rain.png' ;
-    } else if(data.weather[0].main === 'Drizzle') {
-      weatherIcon.src = 'images/drizzle.png' ;
-    } else if(data.weather[0].main === 'Mist') {
-      weatherIcon.src = 'images/mist.png' ;
+    if (!response.ok) {
+      handleWeatherError();
+      return;
     }
 
-    document.querySelector('.error').style.display = 'none';
-    document.querySelector('.weather').style.display = 'block';
+    const data = await response.json();
+    updateWeatherUI(data);
+  } catch (error) {
+    console.error('Error fetching weather data:', error);
+    handleWeatherError();
   }
 }
+
+/**
+ * Handles errors in fetching weather data.
+ */
+function handleWeatherError() {
+  ERROR_ELEMENT.style.display = 'block';
+  WEATHER_ELEMENT.style.display = 'none';
+}
+
+/**
+ * Updates the weather UI with the fetched data.
+ *
+ * @param {Object} data - The weather data object.
+ */
+function updateWeatherUI(data) {
+  CITY_ELEMENT.textContent = data.name;
+  TEMP_ELEMENT.textContent = `${Math.round(data.main.temp)} °C`;
+  HUMIDITY_ELEMENT.textContent = `${data.main.humidity} %`;
+  WIND_ELEMENT.textContent = `${data.wind.speed} km/h`;
+
+  const WEATHER_ICON_MAP = {
+    Clear: 'images/clear.png',
+    Clouds: 'images/clouds.png',
+    Drizzle: 'images/drizzle.png',
+    Humidity: 'images/humidity.png',
+    Mist: 'images/mist.png',
+    Rain: 'images/rain.png',
+    Snow: 'images/snow.png',
+    Wind: 'images/wind.png'
+  };
+
+   // Update the weather icon based on the main weather condition
+  WEATHER_ICON.src = WEATHER_ICON_MAP[data.weather[0].main] || 'images/default.png';
+  WEATHER_ICON.alt = WEATHER_ICON_MAP[data.weather[0].main] || 'images/default.png';
+
+  ERROR_ELEMENT.style.display = 'none';
+  WEATHER_ELEMENT.style.display = 'block';
+}
+
+clickEventHandler();
